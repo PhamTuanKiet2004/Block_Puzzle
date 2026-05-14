@@ -3,8 +3,29 @@ using UnityEngine;
 public class Block : MonoBehaviour
 {
     public const int Size = 5;
+    private readonly Vector3 inputOffset = new(0.0f, 2.0f, 0.0f);
+
+    [SerializeField] private Board board;
+
     [SerializeField] private Cell cellPrefab;
+
+    private int polyominoIndex;
+
     private readonly Cell[,] cells = new Cell[Size, Size];
+    private Vector3 position;
+    private Vector3 scale;
+    private Vector2 inputPoint; 
+    private Vector3 previousMousePosition = Vector3.positiveInfinity;
+    private Vector2Int previousDragPoint;
+    private Vector2Int currentDragPoint;
+
+    //cache 
+    private Camera mainCamera;
+    private Vector2 center;
+    private void Awake()
+    {
+        mainCamera = Camera.main;
+    }
     //Hàm hiển thị các block
     public void Initialize()
     {
@@ -15,14 +36,17 @@ public class Block : MonoBehaviour
                 cells[r, c] = Instantiate(cellPrefab, transform); 
             }
         }
+        position = transform.localPosition;
+        scale = transform.localScale;
     }
     public void Show(int polyominoIndex)
     {
+        this.polyominoIndex = polyominoIndex;
         Hide();
         var polyomino = Polyominos.Get(polyominoIndex);
         var polyominoRows = polyomino.GetLength(0);
         var polyominoColumns = polyomino.GetLength(1);
-        var center = new Vector2 (polyominoColumns * 0.5f, polyominoRows * 0.5f);
+        center = new Vector2 (polyominoColumns * 0.5f, polyominoRows * 0.5f);
         for(var r = 0;r<polyominoRows; ++r)
         {
             for(var c = 0;c<polyominoColumns; ++c)
@@ -47,14 +71,39 @@ public class Block : MonoBehaviour
     }
     private void OnMouseDown()
     {
-        Debug.Log("OnMouseDown");
+        transform.localPosition = position + inputOffset;
+        transform.localScale = Vector3.one;
+        inputPoint = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+        currentDragPoint = Vector2Int.RoundToInt((Vector2)transform.position - center);
+        
+        board.Hover(currentDragPoint, polyominoIndex);
+
+        previousDragPoint = currentDragPoint;
+        previousMousePosition = Input.mousePosition;
     }
     private void OnMouseDrag()
     {
-        Debug.Log("OnMouseDrag");
+        var currentMousePosition = Input.mousePosition;
+        if (currentMousePosition != previousMousePosition)
+        {
+            previousMousePosition = currentMousePosition;
+            var inputDelta = (Vector2)mainCamera.ScreenToWorldPoint(Input.mousePosition) - inputPoint;
+            transform.localPosition = position + inputOffset + (Vector3)inputDelta*1.4f;
+
+            currentDragPoint = Vector2Int.RoundToInt((Vector2)transform.position - center);
+            if(currentDragPoint!=previousDragPoint)
+            {
+                Debug.Log($"Drag point {currentDragPoint}");
+                previousDragPoint = currentDragPoint;
+            }
+        }
     }
     private void OnMouseUp()
     {
         Debug.Log("OnMouseUp");
+        transform.localPosition = position;
+        transform.localScale = scale;
+
+        previousMousePosition = Vector3.positiveInfinity;
     }
 }
