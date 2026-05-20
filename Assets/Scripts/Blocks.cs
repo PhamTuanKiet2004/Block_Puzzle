@@ -4,6 +4,12 @@ public class Blocks : MonoBehaviour
 {
     [SerializeField] private Block[] blocks;
 
+    [SerializeField] private Board board;
+
+    private int[] polyominoIndexes;
+
+    private int blockCount = 0;
+
     private void Start()
     {
         // Chiều rộng tổng cộng của Board là Board.size (8)
@@ -31,13 +37,39 @@ public class Blocks : MonoBehaviour
 
             blocks[i].Initialize();
         }
+        polyominoIndexes = new int[blocks.Length];
         Generate();
     }
     private void Generate()
     {
         for (var i = 0; i < blocks.Length; ++i)
         {
-            blocks[i].Show(0);
+            polyominoIndexes[i] = Random.Range(0, Polyominos.Length);
+            blocks[i].gameObject.SetActive(true);
+            blocks[i].Show(polyominoIndexes[i]);
+            ++blockCount; 
+        }
+    }
+    public void Remove()
+    {
+        --blockCount;
+        if(blockCount <= 0)
+        {
+            blockCount = 0;
+            Generate();
+        }
+        var lose = true;
+        for (var i = 0; i < blocks.Length; ++i)
+        {
+            if (blocks[i].gameObject.activeSelf == true && board.CheckPlace(polyominoIndexes[i]) == true)
+            {
+                lose = false;
+                break;
+            }
+        }
+        if(lose == true)
+        {
+            Debug.Log("Lose");
         }
     }
 }

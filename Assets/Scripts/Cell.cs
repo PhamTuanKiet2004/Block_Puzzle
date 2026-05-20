@@ -16,7 +16,7 @@ public class Cell : MonoBehaviour
         spriteRenderer.color = Color.white;
         spriteRenderer.sprite = normal;
     }
-    private void Highlight()
+    public void Highlight()
     {
         gameObject.SetActive(true);
         spriteRenderer.color = Color.white;

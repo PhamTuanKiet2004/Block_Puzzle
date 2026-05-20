@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+
 
 public class Block : MonoBehaviour
 {
@@ -6,6 +8,8 @@ public class Block : MonoBehaviour
     private readonly Vector3 inputOffset = new(0.0f, 2.0f, 0.0f);
 
     [SerializeField] private Board board;
+
+    [SerializeField] private Blocks blocks;
 
     [SerializeField] private Cell cellPrefab;
 
@@ -77,6 +81,7 @@ public class Block : MonoBehaviour
         currentDragPoint = Vector2Int.RoundToInt((Vector2)transform.position - center);
         
         board.Hover(currentDragPoint, polyominoIndex);
+        Highlight(board.HighlightPolyominoColumns, board.HighlightPolyominoRows);
 
         previousDragPoint = currentDragPoint;
         previousMousePosition = Input.mousePosition;
@@ -93,17 +98,78 @@ public class Block : MonoBehaviour
             currentDragPoint = Vector2Int.RoundToInt((Vector2)transform.position - center);
             if(currentDragPoint!=previousDragPoint)
             {
-                Debug.Log($"Drag point {currentDragPoint}");
+                board.Hover(currentDragPoint, polyominoIndex);
                 previousDragPoint = currentDragPoint;
+                Highlight(board.HighlightPolyominoColumns, board.HighlightPolyominoRows);
             }
         }
     }
     private void OnMouseUp()
     {
-        Debug.Log("OnMouseUp");
+        previousMousePosition = Vector3.positiveInfinity;
+
+        currentDragPoint = Vector2Int.RoundToInt((Vector2)transform.position - center); 
+        if(board.Place(currentDragPoint, polyominoIndex) == true)
+        {
+            gameObject.SetActive(false);
+            blocks.Remove();
+        }
+
         transform.localPosition = position;
         transform.localScale = scale;
 
-        previousMousePosition = Vector3.positiveInfinity;
+      
+    }
+
+    private void Highlight(List<int> columns, List<int> rows)
+    {
+        var polyomino = Polyominos.Get(polyominoIndex);
+        var polyominoRows = polyomino.GetLength(0);
+        var polyominoColumns = polyomino.GetLength(1);
+
+        Unhighlight(polyominoColumns, polyominoRows, polyomino);
+        HighlightColumns(polyominoRows, polyomino, columns);
+        HighlightRows(polyominoColumns, polyomino, rows);
+    }
+
+    private void Unhighlight(int polyominoColumns, int polyominoRows, int[,] polyomino)
+    {
+        for (var r = 0; r < polyominoRows; ++r)
+        {
+            for (var c = 0; c < polyominoColumns; ++c)
+            {
+                if (polyomino[r, c] > 0)
+                {
+                    cells[r, c].Normal();
+                }
+            }
+        }
+    }
+
+    private void HighlightColumns(int polyominoRows, int[,] polyomino, List<int> columns)
+    {
+        foreach (var c in columns)
+        {
+            for (var r = 0; r < polyominoRows; ++r)
+            {
+                if (polyomino[r, c] > 0)
+                {
+                    cells[r, c].Highlight();
+                }
+            }
+        }
+    }
+    private void HighlightRows(int polyominoColumns, int[,] polyomino, List<int> rows)
+    {
+        foreach (var r in rows)
+        {
+            for (var c = 0; c < polyominoColumns; ++c)
+            {
+                if (polyomino[r, c] > 0)
+                {
+                    cells[r, c].Highlight();
+                }
+            }
+        }
     }
 }
