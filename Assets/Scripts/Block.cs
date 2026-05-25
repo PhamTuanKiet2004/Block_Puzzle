@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 
 public class Block : MonoBehaviour
@@ -12,6 +13,8 @@ public class Block : MonoBehaviour
     [SerializeField] private Blocks blocks;
 
     [SerializeField] private Cell cellPrefab;
+
+    private SortingGroup sortingGroup;
 
     private int polyominoIndex;
 
@@ -28,6 +31,7 @@ public class Block : MonoBehaviour
     private Vector2 center;
     private void Awake()
     {
+        sortingGroup = gameObject.GetComponent<SortingGroup>();
         mainCamera = Camera.main;
     }
     //Hàm hiển thị các block
@@ -78,6 +82,11 @@ public class Block : MonoBehaviour
         transform.localPosition = position + inputOffset;
         transform.localScale = Vector3.one;
         inputPoint = mainCamera.ScreenToWorldPoint(Input.mousePosition);
+
+
+        blocks.ResetBlockSortingOrders();
+        SetSortingOrder(1);
+
         currentDragPoint = Vector2Int.RoundToInt((Vector2)transform.position - center);
         
         board.Hover(currentDragPoint, polyominoIndex);
@@ -171,5 +180,9 @@ public class Block : MonoBehaviour
                 }
             }
         }
+    }
+    public void SetSortingOrder(int sortingOrder)
+    {
+        sortingGroup.sortingOrder = sortingOrder;
     }
 }

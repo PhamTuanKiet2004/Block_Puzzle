@@ -2,13 +2,23 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using UnityEditor;
+using TMPro;
 
 public class Board : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public const int size = 8;
+
+    private const string BestScoreKey = "BestScore";
+
     [SerializeField] private Cell cellPrefab;
     [SerializeField] private Transform cellsTransform;
+
+    [Space(8.0f)]
+    [SerializeField] private TMP_Text Score_Text;
+    [SerializeField] private TMP_Text bestScore_Text;
+
+
     private readonly Cell[,] cells = new Cell[size, size];
     private readonly int[,] data = new int[size, size]; //0 Empty, 1 Hover, 2 Normal
     private readonly List<Vector2Int> hoverPoints = new();
@@ -17,6 +27,13 @@ public class Board : MonoBehaviour
     private readonly List<int> highlightPolyominoRows = new();
     private readonly List<int> fullLineColumns = new();
     private readonly List<int> fullLineRows = new();
+
+    private Vector2Int previousHoverPoint;
+    private readonly List<Vector2Int> previousHoverPoints = new();
+
+    private int score;
+    private int bestScore;
+
 
     void Start()
     {
@@ -29,6 +46,10 @@ public class Board : MonoBehaviour
                 cells[r, c].Hide();
             }
         }
+        score = 0;
+        bestScore = PlayerPrefs.GetInt(BestScoreKey, 0);
+        Score_Text.text = score.ToString();
+        bestScore_Text.text = bestScore.ToString();
     }
     public void Hover(Vector2Int point, int polyominoIndex)
     {
@@ -45,17 +66,26 @@ public class Board : MonoBehaviour
 
         if (hoverPoints.Count > 0)
         {
+            previousHoverPoint = point; 
+            previousHoverPoints.Clear();
+            previousHoverPoints.AddRange(hoverPoints);
+
             Hover();
             Highlight(point, polyominoRows, polyominoColumns);
 
-            foreach(var fullLineColumn in fullLineColumns)
-            {
-               highlightPolyominoColumns.Add(fullLineColumn - point.x);
-            }
-            foreach (var fullLineRow in fullLineRows)
-            {
-                highlightPolyominoRows.Add(fullLineRow - point.y);
-            }
+        }
+        else if(previousHoverPoints.Count > 0 && Math.Abs(point.x -previousHoverPoint.x) < 2 && Math.Abs(point.y - previousHoverPoint.y) < 2)
+        {
+            point = previousHoverPoint;
+            hoverPoints.Clear();
+            hoverPoints.AddRange(previousHoverPoints);
+
+            Hover();
+            Highlight(point, polyominoRows, polyominoColumns);
+        }
+        else
+        {
+            previousHoverPoints.Clear();
         }
     }
 
@@ -112,8 +142,20 @@ public class Board : MonoBehaviour
         if (hoverPoints.Count > 0)
         {
             Place(point, polyominoColumns, polyominoRows);
+
+            previousHoverPoints.Clear();
             return true;
         }
+        else if (previousHoverPoints.Count > 0 && Math.Abs(point.x - previousHoverPoint.x) < 2 && Math.Abs(point.y - previousHoverPoint.y) < 2)
+        {
+            point = previousHoverPoint;
+            hoverPoints.Clear();
+            hoverPoints.AddRange(previousHoverPoints);
+            Place(point, polyominoColumns, polyominoRows);
+            previousHoverPoints.Clear();
+            return true;
+        }
+        previousHoverPoints.Clear();
         return false;
     }
     private void Place(Vector2Int point, int polyominoColumns, int polyominoRows)
@@ -132,6 +174,9 @@ public class Board : MonoBehaviour
     {
         FullLineColumns(point.x, point.x + polyominoColumns);
         FullLineRows(point.y, point.y + polyominoRows);
+
+        AddScore(fullLineColumns.Count * size + fullLineRows.Count* size);
+
         ClearFullLineColumns();
         ClearFullLineRows();
     }
@@ -206,6 +251,15 @@ public class Board : MonoBehaviour
         PredictFullLineRows(point.y, point.y + polyominoRows);
         HighlightFullLineColumns();
         HighlightFullLineRows();
+
+        foreach (var fullLineColumn in fullLineColumns)
+        {
+            highlightPolyominoColumns.Add(fullLineColumn - point.x);
+        }
+        foreach (var fullLineRow in fullLineRows)
+        {
+            highlightPolyominoRows.Add(fullLineRow - point.y);
+        }
     }
 
     private void Unhighlight()
@@ -340,6 +394,19 @@ public class Board : MonoBehaviour
             }
         }
         return true;
+    }
+
+    public void AddScore (int amount)
+    {
+        score += amount;
+        if(score > bestScore)
+        {
+            bestScore = score;
+            PlayerPrefs.SetInt(BestScoreKey, bestScore);
+        }
+
+        Score_Text.text = score.ToString();
+        bestScore_Text.text = bestScore.ToString(); 
     }
 
     public List<int> HighlightPolyominoColumns => highlightPolyominoColumns;

@@ -1,10 +1,16 @@
+using System.Collections;
+using Unity.VectorGraphics;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Blocks : MonoBehaviour
 {
     [SerializeField] private Block[] blocks;
 
     [SerializeField] private Board board;
+
+    [Space(8.0f)]
+    [SerializeField] private GameObject loseGameObject;
 
     private int[] polyominoIndexes;
 
@@ -69,7 +75,24 @@ public class Blocks : MonoBehaviour
         }
         if(lose == true)
         {
-            Debug.Log("Lose");
+            Lose();
         }
+    }
+    public void ResetBlockSortingOrders()
+    {
+        for (var i = 0; i < blocks.Length; ++i)
+        {
+            blocks[i].SetSortingOrder(0);
+        }
+    }
+    private void Lose()
+    {
+        loseGameObject.SetActive(true);
+        StartCoroutine(DelayAndLoseCoroutine());
+    }
+    private IEnumerator DelayAndLoseCoroutine()
+    {
+        yield return new  WaitForSeconds(3.0f);
+        SceneManager.LoadScene("Game");
     }
 }
