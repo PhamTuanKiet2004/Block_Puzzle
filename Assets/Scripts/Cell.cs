@@ -16,13 +16,13 @@ public class Cell : MonoBehaviour
         spriteRenderer.color = Color.white;
         spriteRenderer.sprite = normal;
     }
-    private void Highlight()
+    public void Highlight()
     {
         gameObject.SetActive(true);
         spriteRenderer.color = Color.white;
         spriteRenderer.sprite = highlight;
     }
-    private void Hover()
+    public void Hover()
     {
         gameObject.SetActive(true);
         spriteRenderer.color = new(1.0f, 1.0f, 1.0f, 0.5f);

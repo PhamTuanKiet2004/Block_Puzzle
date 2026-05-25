@@ -1,8 +1,20 @@
+using System.Collections;
+using Unity.VectorGraphics;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Blocks : MonoBehaviour
 {
     [SerializeField] private Block[] blocks;
+
+    [SerializeField] private Board board;
+
+    [Space(8.0f)]
+    [SerializeField] private GameObject loseGameObject;
+
+    private int[] polyominoIndexes;
+
+    private int blockCount = 0;
 
     private void Start()
     {
@@ -31,13 +43,56 @@ public class Blocks : MonoBehaviour
 
             blocks[i].Initialize();
         }
+        polyominoIndexes = new int[blocks.Length];
         Generate();
     }
     private void Generate()
     {
         for (var i = 0; i < blocks.Length; ++i)
         {
-            blocks[i].Show(0);
+            polyominoIndexes[i] = Random.Range(0, Polyominos.Length);
+            blocks[i].gameObject.SetActive(true);
+            blocks[i].Show(polyominoIndexes[i]);
+            ++blockCount; 
         }
+    }
+    public void Remove()
+    {
+        --blockCount;
+        if(blockCount <= 0)
+        {
+            blockCount = 0;
+            Generate();
+        }
+        var lose = true;
+        for (var i = 0; i < blocks.Length; ++i)
+        {
+            if (blocks[i].gameObject.activeSelf == true && board.CheckPlace(polyominoIndexes[i]) == true)
+            {
+                lose = false;
+                break;
+            }
+        }
+        if(lose == true)
+        {
+            Lose();
+        }
+    }
+    public void ResetBlockSortingOrders()
+    {
+        for (var i = 0; i < blocks.Length; ++i)
+        {
+            blocks[i].SetSortingOrder(0);
+        }
+    }
+    private void Lose()
+    {
+        loseGameObject.SetActive(true);
+        StartCoroutine(DelayAndLoseCoroutine());
+    }
+    private IEnumerator DelayAndLoseCoroutine()
+    {
+        yield return new  WaitForSeconds(3.0f);
+        SceneManager.LoadScene("Game");
     }
 }
